@@ -4,3 +4,4 @@ node_modules
 .env*
 *.excalidraw
 dist/
+docker-compose.yaml

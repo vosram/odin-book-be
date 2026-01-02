@@ -27,6 +27,8 @@ async function main() {
     caption: string;
     imageUrl: string;
     authorId: string;
+    imageWidth: number;
+    imageHeight: number;
   }[] = [];
 
   for (let user of newUsers) {
@@ -35,6 +37,8 @@ async function main() {
         caption: faker.lorem.paragraph({ min: 3, max: 5 }),
         imageUrl: imgUrl,
         authorId: user.id,
+        imageWidth: 1000,
+        imageHeight: 1000,
       };
       return post;
     });

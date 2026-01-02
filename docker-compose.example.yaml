@@ -1,0 +1,17 @@
+services:
+  # A postgres container to setup a dev db
+  odin-be-db:
+    image: postgres:18-trixie
+    container_name: odin-be-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: <pg_user>
+      POSTGRES_PASSWORD: <password>
+      POSTGRES_DB: odin_book
+    volumes:
+      - odin-be-data:/var/lib/postgresql
+    ports:
+      - "5432:5432"
+
+volumes:
+  odin-be-data:
