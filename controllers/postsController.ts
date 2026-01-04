@@ -118,6 +118,9 @@ export const getPosts_GET = [
             },
           },
           likes: {
+            where: {
+              userId: req.user?.id,
+            },
             select: {
               userId: true,
             },
@@ -171,7 +174,7 @@ export const getPosts_GET = [
                 })
               : post.author.profileImg,
           },
-          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
+          likedByUser: post.likes.length > 0,
         };
       });
       res.json({
@@ -247,6 +250,9 @@ export const getPosts_GET = [
             },
           },
           likes: {
+            where: {
+              userId: req.user?.id,
+            },
             select: {
               userId: true,
             },
@@ -300,7 +306,7 @@ export const getPosts_GET = [
           imageHeight: post.imageHeight,
           createdAt: post.createdAt,
           updatedAt: post.updatedAt,
-          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
+          likedByUser: post.likes.length > 0,
         };
       });
       res.json({
@@ -360,6 +366,9 @@ export const getPosts_GET = [
             },
           },
           likes: {
+            where: {
+              userId: req.user?.id,
+            },
             select: {
               userId: true,
             },
@@ -413,7 +422,7 @@ export const getPosts_GET = [
             userLikes: post._count.likes,
             comments: post._count.comments,
           },
-          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
+          likedByUser: post.likes.length > 0,
           userIsAuthor: req.user?.id === post.author.id,
         };
       });
@@ -507,6 +516,9 @@ export const getPosts_GET = [
             },
           },
           likes: {
+            where: {
+              userId: req.user?.id,
+            },
             select: {
               userId: true,
             },
@@ -559,7 +571,7 @@ export const getPosts_GET = [
             userLikes: post._count.likes,
             comments: post._count.comments,
           },
-          likedByUser: post.likes.some((user) => user.userId === req.user?.id),
+          likedByUser: post.likes.length > 0,
           userIsAuthor: req.user?.id === post.author.id,
         };
       });
