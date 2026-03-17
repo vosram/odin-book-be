@@ -38,19 +38,22 @@
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
+    "@types/pg": "^8.18.0",
     "prettier": "^3.4.2",
-    "prisma": "^6.5.0",
+    "prisma": "^7.5.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
     "vitest": "^3.1.2"
   },
   "dependencies": {
     "@paralleldrive/cuid2": "^2.2.2",
-    "@prisma/client": "^6.5.0",
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.5.1",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
     "express": "^4.21.2",
     "express-async-handler": "^1.2.0",
     "express-validator": "^7.2.1",
@@ -62,6 +65,7 @@
     "node-cron": "^3.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "passport-jwt": "^4.0.1"
+    "passport-jwt": "^4.0.1",
+    "pg": "^8.20.0"
   }
 }

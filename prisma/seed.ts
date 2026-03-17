@@ -15,10 +15,41 @@ async function main() {
     };
     return user;
   });
+
   const users = await Promise.all(userPromises);
   console.log("creating users");
+
   const newUsers = await db.user.createManyAndReturn({ data: users });
   console.log("user creation finished");
+  const newAccounts = await db.account.createManyAndReturn({
+    data: [
+      {
+        userId: newUsers[0].id,
+        provider: "CREDENTIALS",
+        providerAccountId: newUsers[0].email!,
+      },
+      {
+        userId: newUsers[1].id,
+        provider: "CREDENTIALS",
+        providerAccountId: newUsers[1].email!,
+      },
+      {
+        userId: newUsers[2].id,
+        provider: "CREDENTIALS",
+        providerAccountId: newUsers[2].email!,
+      },
+      {
+        userId: newUsers[3].id,
+        provider: "CREDENTIALS",
+        providerAccountId: newUsers[3].email!,
+      },
+      {
+        userId: newUsers[4].id,
+        provider: "CREDENTIALS",
+        providerAccountId: newUsers[4].email!,
+      },
+    ],
+  });
 
   // TODO: create 5 post per user
   const imgUrl =

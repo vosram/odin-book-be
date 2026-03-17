@@ -4,3 +4,4 @@ package-lock.json
 prisma/migrations
 tsconfig.json
 dist/
+generated/
