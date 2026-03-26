@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { AppError } from "../lib/errors.ts";
 import passport from "passport";
 import status from "http-status";
+import { createRefreshToken } from "@/lib/refreshTokens";
 
 // POST /auth/signup
 export const signup_POST = [
@@ -133,7 +134,6 @@ export const signin_POST = [
   validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     // At this point we know there is no validation errors.
-    // TODO: See if user exists
     const { email, password } = matchedData(req);
     const user = await db.user.findUnique({
       where: {
@@ -148,10 +148,11 @@ export const signin_POST = [
         email: true,
       },
     });
+
     if (!user) {
       const error = new AppError(
-        401,
-        "UNAUTHORIZED",
+        status.UNAUTHORIZED,
+        status[status.UNAUTHORIZED],
         "Email or password is incorrect",
       );
       res.status(error.status).json({
@@ -166,8 +167,8 @@ export const signin_POST = [
     const passwordsMatch = await bcrypt.compare(password, user.password!);
     if (!passwordsMatch) {
       const error = new AppError(
-        401,
-        "UNAUTHORIZED",
+        status.UNAUTHORIZED,
+        status[status.UNAUTHORIZED],
         "Email or password is incorrect",
       );
       res.status(error.status).json({
@@ -179,13 +180,18 @@ export const signin_POST = [
       });
       return;
     }
-    // TODO: Check if user is banned
+
     const isBanned =
       user.bannedUntil != null && user.bannedUntil > new Date(Date.now());
     if (isBanned) {
-      const error = new AppError(403, "BANNED", "You are currently banned.", {
-        bannedUntil: user.bannedUntil,
-      });
+      const error = new AppError(
+        status.FORBIDDEN,
+        status[status.FORBIDDEN],
+        "You are currently banned.",
+        {
+          bannedUntil: user.bannedUntil,
+        },
+      );
       res.status(error.status).json({
         success: false,
         error: {
@@ -196,7 +202,7 @@ export const signin_POST = [
       });
       return;
     }
-    // TODO: issue access JWT and refresh token
+
     await db.user.update({
       where: {
         id: user.id,
@@ -205,6 +211,8 @@ export const signin_POST = [
         lastLogin: new Date(Date.now()),
       },
     });
+
+    const refreshToken = await createRefreshToken(user.id);
 
     jwt.sign(
       { sub: user.id, username: user.username, name: user.name },
@@ -218,22 +226,14 @@ export const signin_POST = [
           next(err);
           return;
         }
-        jwt.sign(
-          { sub: user.id },
-          process.env.JWT_SECRET!,
-          {
-            algorithm: "HS256",
-            expiresIn: "7d",
-          },
-          (err, refreshToken) => {
-            if (err) {
-              next(err);
-              return;
-            }
-            res.json({ success: true, accessToken, refreshToken });
-            return;
-          },
-        );
+        res.cookie("refresh_token", refreshToken.token, {
+          httpOnly: true,
+          expires: refreshToken.expiresAt,
+        });
+        res.json({
+          success: true,
+          accessToken,
+        });
       },
     );
   }),
@@ -241,104 +241,96 @@ export const signin_POST = [
 
 // POST /auth/refresh
 export const refreshToken_POST = [
-  body("refreshToken").isJWT(),
-  validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { refreshToken } = matchedData(req);
-    jwt.verify(
-      refreshToken,
+    const refreshTokenStr = req.cookies["refresh_token"];
+    if (!refreshTokenStr) {
+      next(
+        new AppError(
+          status.FORBIDDEN,
+          status[status.FORBIDDEN],
+          "refresh token is missing from request cookies",
+        ),
+      );
+      return;
+    }
+
+    const refreshToken = await db.refreshToken.findUnique({
+      where: {
+        token: refreshTokenStr,
+      },
+      include: {
+        user: true,
+      },
+    });
+    if (!refreshToken) {
+      next(
+        new AppError(
+          status.FORBIDDEN,
+          status[status.FORBIDDEN],
+          "refresh token is expired",
+        ),
+      );
+      return;
+    }
+    if (refreshToken.expiresAt < new Date(Date.now())) {
+      next(
+        new AppError(
+          status.FORBIDDEN,
+          status[status.FORBIDDEN],
+          "refresh token is expired",
+        ),
+      );
+      return;
+    }
+    if (
+      refreshToken.user.bannedUntil != null &&
+      refreshToken.user.bannedUntil > new Date(Date.now())
+    ) {
+      next(
+        new AppError(
+          status.FORBIDDEN,
+          status[status.FORBIDDEN],
+          "You are currently banned",
+          {
+            bannedUntil: refreshToken.user.bannedUntil,
+          },
+        ),
+      );
+      return;
+    }
+
+    await db.refreshToken.delete({
+      where: {
+        token: refreshToken.token,
+      },
+    });
+
+    const newRefreshToken = await createRefreshToken(refreshToken.user.id);
+
+    jwt.sign(
+      {
+        sub: refreshToken.user.id,
+        username: refreshToken.user.username,
+        name: refreshToken.user.name,
+      },
       process.env.JWT_SECRET!,
       {
-        algorithms: ["HS256"],
+        algorithm: "HS256",
+        expiresIn: "5m",
       },
-      async (err, payload) => {
+      (err, accessToken) => {
         if (err) {
           next(err);
           return;
         }
-        if (!payload) {
-          throw new AppError(
-            500,
-            "INTERNAL_SERVER_ERROR",
-            "JWT Payload is undefined",
-          );
-        }
-        if (typeof payload === "string") {
-          throw new AppError(
-            500,
-            "INTERNAL_SERVER_ERROR",
-            "JWT payload is string instead of object",
-          );
-        }
-        // check if user exists
-        const user = await db.user.findUnique({
-          where: {
-            id: payload.sub,
-          },
+        res.cookie("refresh_token", newRefreshToken.token, {
+          httpOnly: true,
+          expires: newRefreshToken.expiresAt,
         });
-        if (!user) {
-          throw new AppError(404, "NOT_FOUND", "User Not found");
-        }
-        // chech is user is banned
-        const isBanned =
-          user.bannedUntil != null && user.bannedUntil > new Date(Date.now());
-        if (isBanned) {
-          const error = new AppError(
-            403,
-            "BANNED",
-            "You are banned and can not get an access token",
-            { bannedUntil: user.bannedUntil },
-          );
-          res.status(error.status).json({
-            success: false,
-            error: {
-              code: error.code,
-              message: error.message,
-              details: error.details,
-            },
-          });
-          return;
-        }
-        // All OK: issue new tokens
-        const userPayload = {
-          sub: user.id,
-          username: user.username,
-          name: user.name,
-        };
-
-        jwt.sign(
-          userPayload,
-          process.env.JWT_SECRET!,
-          {
-            algorithm: "HS256",
-            expiresIn: "5m",
-          },
-          (err, newAccessToken) => {
-            if (err) {
-              next(err);
-              return;
-            }
-            jwt.sign(
-              { sub: user.id },
-              process.env.JWT_SECRET!,
-              {
-                algorithm: "HS256",
-                expiresIn: "7d",
-              },
-              (err, newRefreshToken) => {
-                if (err) {
-                  next(err);
-                  return;
-                }
-                res.json({
-                  success: true,
-                  accessToken: newAccessToken,
-                  refreshToken: newRefreshToken,
-                });
-              },
-            );
-          },
-        );
+        res.json({
+          success: true,
+          accessToken,
+        });
       },
     );
   }),

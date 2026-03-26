@@ -5,3 +5,4 @@ prisma/migrations
 tsconfig.json
 dist/
 generated/
+pnpm-*

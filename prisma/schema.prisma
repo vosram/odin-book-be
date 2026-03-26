@@ -7,7 +7,7 @@
 generator client {
   provider        = "prisma-client"
   previewFeatures = ["strictUndefinedChecks"]
-  output = "../generated/prisma"
+  output          = "../generated/prisma"
 }
 
 datasource db {
@@ -27,7 +27,8 @@ model User {
   lastLogin    DateTime? @map("last_login") @db.Timestamptz()
   bannedUntil  DateTime? @map("banned_until") @db.Timestamptz
 
-  account Account[]
+  account       Account[]
+  refreshTokens RefreshToken[]
 
   posts    Post[]
   comments Comment[]
@@ -52,6 +53,17 @@ model Account {
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
+}
+
+model RefreshToken {
+  token     String   @id @map("token")
+  createdAt DateTime @map("created_at")
+  updatedAt DateTime @map("updated_at")
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  expiresAt DateTime @map("expires_at")
+
+  @@map("refresh_tokens")
 }
 
 model Post {

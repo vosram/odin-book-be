@@ -25,6 +25,7 @@ import { clearOldUserBans } from "./lib/cronJobs.ts";
 import { generateRandomUsername } from "./lib/utils.ts";
 import compression from "compression";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
 
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
@@ -36,6 +37,7 @@ app.use(
   }),
 );
 app.use(express.json());
+app.use(cookieParser());
 app.use(morgan("dev"));
 if (process.env.NODE_ENV === "production") {
   app.use(compression());
