@@ -11,6 +11,7 @@
     "start": "prisma migrate deploy && node ./dist/app.js",
     "start:local": "NODE_ENV=production node ./dist/app.js",
     "prettier": "prettier . --write",
+    "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
