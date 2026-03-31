@@ -4,9 +4,9 @@ import { matchedData, param, query } from "express-validator";
 import passport from "passport";
 import { type Request, type Response, type NextFunction } from "express";
 import db from "../db/db.ts";
-import { Prisma } from "@prisma/client";
 import { AppError } from "../lib/errors.ts";
 import cloudinary from "../lib/cloudinaryUploader.ts";
+import { Prisma } from "@/generated/prisma/client";
 
 // GET /profiles
 export const profiles_GET = [
