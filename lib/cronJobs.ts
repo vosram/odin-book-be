@@ -18,3 +18,19 @@ export async function clearOldUserBans() {
     console.error("Error unbanning users", err);
   }
 }
+
+export async function clearExpiredRefreshTokens() {
+  const now = new Date(Date.now());
+  try {
+    const deletedRefreshTokens = await db.refreshToken.deleteMany({
+      where: {
+        expiresAt: {
+          lte: now,
+        },
+      },
+    });
+    console.log(`Removed ${deletedRefreshTokens.count} expired tokens`);
+  } catch (err) {
+    console.log("Error removing expired refresh tokens", err);
+  }
+}

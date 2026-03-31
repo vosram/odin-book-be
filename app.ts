@@ -21,7 +21,7 @@ import { AppError } from "./lib/errors.ts";
 import multer from "multer";
 import { status } from "http-status";
 import cron from "node-cron";
-import { clearOldUserBans } from "./lib/cronJobs.ts";
+import { clearExpiredRefreshTokens, clearOldUserBans } from "./lib/cronJobs.ts";
 import { generateRandomUsername } from "./lib/utils.ts";
 import compression from "compression";
 import helmet from "helmet";
@@ -267,6 +267,9 @@ function onListening() {
 const unbanTask = cron.schedule("0 * * * *", () => {
   clearOldUserBans().then(() => {
     console.log("Unban cron job complete");
+  });
+  clearExpiredRefreshTokens().then(() => {
+    console.log("Clear expired refresh tokens cronjob completed");
   });
 });
 

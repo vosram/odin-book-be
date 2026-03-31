@@ -226,13 +226,10 @@ export const signin_POST = [
           next(err);
           return;
         }
-        res.cookie("refresh_token", refreshToken.token, {
-          httpOnly: true,
-          expires: refreshToken.expiresAt,
-        });
         res.json({
           success: true,
           accessToken,
+          refreshToken: refreshToken.token,
         });
       },
     );
@@ -241,8 +238,10 @@ export const signin_POST = [
 
 // POST /auth/refresh
 export const refreshToken_POST = [
+  body("refreshToken").isString().isLength({ min: 24, max: 32 }),
+  validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const refreshTokenStr = req.cookies["refresh_token"];
+    const { refreshToken: refreshTokenStr } = matchedData(req);
     if (!refreshTokenStr) {
       next(
         new AppError(
@@ -323,13 +322,10 @@ export const refreshToken_POST = [
           next(err);
           return;
         }
-        res.cookie("refresh_token", newRefreshToken.token, {
-          httpOnly: true,
-          expires: newRefreshToken.expiresAt,
-        });
         res.json({
           success: true,
           accessToken,
+          refreshToken: newRefreshToken.token,
         });
       },
     );
@@ -363,6 +359,7 @@ export const googleLogin_GET = [
 export const googleLoginCallback_GET = [
   passport.authenticate("google", { session: false }),
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const refreshToken = await createRefreshToken(req.user?.id!);
     jwt.sign(
       { sub: req.user?.id, username: req.user?.username, name: req.user?.name },
       process.env.JWT_SECRET!,
@@ -375,24 +372,11 @@ export const googleLoginCallback_GET = [
           next(err);
           return;
         }
-        jwt.sign(
-          { sub: req.user?.id },
-          process.env.JWT_SECRET!,
-          {
-            algorithm: "HS256",
-            expiresIn: "7d",
-          },
-          (err, refreshToken) => {
-            if (err) {
-              next(err);
-              return;
-            }
-            res.redirect(
-              `${process.env.FE_URL}/oauth-success?accessToken=${accessToken}&refreshToken=${refreshToken}`,
-            );
-            return;
-          },
-        );
+        res.json({
+          success: true,
+          accessToken: accessToken,
+          refreshToken: refreshToken.token,
+        });
       },
     );
   }),
