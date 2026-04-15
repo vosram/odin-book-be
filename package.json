@@ -70,5 +70,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.20.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
   }
 }
