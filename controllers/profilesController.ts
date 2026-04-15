@@ -6,7 +6,7 @@ import { type Request, type Response, type NextFunction } from "express";
 import db from "../db/db.ts";
 import { AppError } from "../lib/errors.ts";
 import cloudinary from "../lib/cloudinaryUploader.ts";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "../generated/prisma/client.ts";
 
 // GET /profiles
 export const profiles_GET = [

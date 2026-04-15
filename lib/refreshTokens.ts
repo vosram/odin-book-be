@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import db from "../db/db";
+import db from "../db/db.ts";
 
 export async function createRefreshToken(userId: string) {
   const now = new Date(Date.now());

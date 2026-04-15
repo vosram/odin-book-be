@@ -8,7 +8,7 @@ import { validateErrors } from "../middleware/validation.ts";
 import { upload } from "../middleware/multer.ts";
 import cloudinary from "../lib/cloudinaryUploader.ts";
 import fs from "node:fs/promises";
-import { Prisma } from "../generated/prisma/client";
+import { Prisma } from "../generated/prisma/client.ts";
 import bcrypt from "bcryptjs";
 import status from "http-status";
 import { createIdBatchesForDeletion } from "../lib/utils.ts";

@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 import { AppError } from "../lib/errors.ts";
 import passport from "passport";
 import status from "http-status";
-import { createRefreshToken } from "@/lib/refreshTokens";
+import { createRefreshToken } from "../lib/refreshTokens.ts";
 
 // POST /auth/signup
 export const signup_POST = [
