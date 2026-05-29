@@ -135,6 +135,25 @@ the response will either be a standard error or this successful response:
 }
 ```
 
+### `POST /auth/logout`
+
+Route will logout the currently logged in user out of the current session or all sessions depending on the request body.
+
+```JSON
+{
+  "allSessions": true,
+  "refreshToken": "cfo20i8a4lmqzw4bgnvq7wpp"
+}
+```
+
+The response will either be a standard error or this successful response:
+
+```JSON
+{
+  "message": "Logged out of all 4 devices successfully"
+}
+```
+
 ### `POST /auth/refresh`
 
 This endpoint is used periodically by clients to get a new accessToken and refreshToken.

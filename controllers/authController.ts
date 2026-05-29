@@ -332,6 +332,49 @@ export const refreshToken_POST = [
   }),
 ];
 
+// POST /auth/logout
+export const logout_POST = [
+  passport.authenticate("jwt", { session: false }),
+  body("allSessions").isBoolean(),
+  body("refreshToken").isString().isLength({ max: 24 }),
+  validateErrors,
+  asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    const userId = req.user?.id;
+    const { allSessions, refreshToken } = matchedData(req);
+
+    if (allSessions === true) {
+      // destroys all refresh tokens associated with logged in user.
+      const { count } = await db.refreshToken.deleteMany({
+        where: {
+          userId: userId,
+        },
+      });
+
+      res.json({ message: `Logged out of all ${count} devices successfully` });
+      return;
+    }
+
+    try {
+      await db.refreshToken.delete({
+        where: {
+          token: refreshToken,
+        },
+      });
+    } catch (err) {
+      const error = new AppError(
+        status.NOT_FOUND,
+        status[status.NOT_FOUND],
+        "user refresh token not found",
+      );
+      next(error);
+      return;
+    }
+
+    res.json({ message: `logged out of current session` });
+    return;
+  }),
+];
+
 // GET /auth/check
 export const check_GET = [
   passport.authenticate("jwt", { session: false }),
