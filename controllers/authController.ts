@@ -415,11 +415,14 @@ export const googleLoginCallback_GET = [
           next(err);
           return;
         }
-        res.json({
-          success: true,
-          accessToken: accessToken,
-          refreshToken: refreshToken.token,
-        });
+        // res.json({
+        //   success: true,
+        //   accessToken: accessToken,
+        //   refreshToken: refreshToken.token,
+        // });
+        res.redirect(
+          `${process.env.FE_URL}/oauth-success?accessToken=${accessToken}&refreshToken=${refreshToken}`,
+        );
       },
     );
   }),
