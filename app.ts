@@ -162,15 +162,17 @@ passport.use(
   ),
 );
 
-app.use("/auth", authRouter);
-app.use("/profiles", profilesRouter);
-app.use("/posts", postRouter);
-app.use("/account", accountRouter);
-app.use("/admin", adminRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/profiles", profilesRouter);
+app.use("/api/posts", postRouter);
+app.use("/api/account", accountRouter);
+app.use("/api/admin", adminRouter);
 
 // catch all 404 and forward to Error Handler
 app.use((req: Request, res: Response, next: NextFunction) => {
-  next(new HttpError("Page does not exist.", 404));
+  next(
+    new AppError(status[status["404_NAME"]], status[404], "Page not found."),
+  );
 });
 
 // error handler
