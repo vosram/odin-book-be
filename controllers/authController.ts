@@ -94,6 +94,8 @@ export const signup_POST = [
       return [newUser, newAccount];
     });
 
+    const refreshToken = await createRefreshToken(newUser.id);
+
     jwt.sign(
       { sub: newUser.id, username: newUser.username, name: newUser.name },
       process.env.JWT_SECRET!,
@@ -106,22 +108,15 @@ export const signup_POST = [
           next(err);
           return;
         }
-        jwt.sign(
-          { sub: newUser.id },
-          process.env.JWT_SECRET!,
-          {
-            algorithm: "HS256",
-            expiresIn: "7d",
-          },
-          (err, refreshToken) => {
-            if (err) {
-              next(err);
-              return;
-            }
-            res.json({ success: true, accessToken, refreshToken });
-            return;
-          },
-        );
+        res.cookie("refresh_token", refreshToken.token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          expires: refreshToken.expiresAt,
+          path: "/api/auth",
+        });
+        res.status(status.CREATED).json({
+          accessToken: accessToken,
+        });
       },
     );
   }),
@@ -226,10 +221,15 @@ export const signin_POST = [
           next(err);
           return;
         }
-        res.json({
+        res.cookie("refresh_token", refreshToken.token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          expires: refreshToken.expiresAt,
+          path: "/api/auth",
+        });
+        res.status(status.OK).json({
           success: true,
           accessToken,
-          refreshToken: refreshToken.token,
         });
       },
     );
