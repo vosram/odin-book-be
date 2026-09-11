@@ -10,7 +10,7 @@ import passport from "passport";
 import status from "http-status";
 import { createRefreshToken } from "../lib/refreshTokens.ts";
 
-// POST /auth/signup
+// POST /api/auth/signup
 export const signup_POST = [
   body("name")
     .isLength({ min: 3, max: 48 })
@@ -122,7 +122,7 @@ export const signup_POST = [
   }),
 ];
 
-// POST /auth/signin
+// POST /api/auth/signin
 export const signin_POST = [
   body("email").isEmail(),
   body("password").isLength({ min: 1, max: 64 }),
@@ -236,18 +236,16 @@ export const signin_POST = [
   }),
 ];
 
-// POST /auth/refresh
+// POST /api/auth/refresh
 export const refreshToken_POST = [
-  body("refreshToken").isString().isLength({ min: 24, max: 32 }),
-  validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { refreshToken: refreshTokenStr } = matchedData(req);
+    const refreshTokenStr = req.cookies.refresh_token;
     if (!refreshTokenStr) {
       next(
         new AppError(
-          status.FORBIDDEN,
-          status[status.FORBIDDEN],
-          "refresh token is missing from request cookies",
+          status.UNAUTHORIZED,
+          status[status.UNAUTHORIZED],
+          "Refresh Token is missing from request cookies",
         ),
       );
       return;
@@ -322,25 +320,40 @@ export const refreshToken_POST = [
           next(err);
           return;
         }
-        res.json({
+        res.cookie("refresh_token", newRefreshToken.token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          expires: newRefreshToken.expiresAt,
+          path: "/api/auth",
+        });
+        res.status(status.OK).json({
           success: true,
           accessToken,
-          refreshToken: newRefreshToken.token,
         });
       },
     );
   }),
 ];
 
-// POST /auth/logout
+// POST /api/auth/logout
 export const logout_POST = [
   passport.authenticate("jwt", { session: false }),
   body("allSessions").isBoolean(),
-  body("refreshToken").isString().isLength({ max: 24 }),
   validateErrors,
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const userId = req.user?.id;
-    const { allSessions, refreshToken } = matchedData(req);
+    const { allSessions } = matchedData(req);
+    const refreshToken = req.cookies.refresh_token;
+    if (!refreshToken) {
+      next(
+        new AppError(
+          status.UNAUTHORIZED,
+          status[status.UNAUTHORIZED],
+          "You are not not authorized",
+        ),
+      );
+      return;
+    }
 
     if (allSessions === true) {
       // destroys all refresh tokens associated with logged in user.
@@ -350,6 +363,12 @@ export const logout_POST = [
         },
       });
 
+      res.cookie("refresh_token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        path: "/api/auth",
+        maxAge: -1,
+      });
       res.json({ message: `Logged out of all ${count} devices successfully` });
       return;
     }
@@ -370,12 +389,18 @@ export const logout_POST = [
       return;
     }
 
+    res.cookie("refresh_token", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      path: "/api/auth",
+      maxAge: -1,
+    });
     res.json({ message: `logged out of current session` });
     return;
   }),
 ];
 
-// GET /auth/check
+// GET /api/auth/check
 export const check_GET = [
   passport.authenticate("jwt", { session: false }),
   (req: Request, res: Response, next: NextFunction) => {
@@ -393,12 +418,12 @@ export const check_GET = [
   },
 ];
 
-// GET /auth/google
+// GET /api/auth/google
 export const googleLogin_GET = [
   passport.authenticate("google", { session: false, scope: ["profile"] }),
 ];
 
-// GET /auth/google/callback
+// GET /api/auth/google/callback
 export const googleLoginCallback_GET = [
   passport.authenticate("google", { session: false }),
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
