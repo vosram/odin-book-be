@@ -296,7 +296,7 @@ export const refreshToken_POST = [
       return;
     }
 
-    await db.refreshToken.delete({
+    await db.refreshToken.deleteMany({
       where: {
         token: refreshToken.token,
       },
@@ -428,27 +428,12 @@ export const googleLoginCallback_GET = [
   passport.authenticate("google", { session: false }),
   asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     const refreshToken = await createRefreshToken(req.user?.id!);
-    jwt.sign(
-      { sub: req.user?.id, username: req.user?.username, name: req.user?.name },
-      process.env.JWT_SECRET!,
-      {
-        algorithm: "HS256",
-        expiresIn: "5m",
-      },
-      (err, accessToken) => {
-        if (err) {
-          next(err);
-          return;
-        }
-        // res.json({
-        //   success: true,
-        //   accessToken: accessToken,
-        //   refreshToken: refreshToken.token,
-        // });
-        res.redirect(
-          `${process.env.FE_URL}/oauth-success?accessToken=${accessToken}&refreshToken=${refreshToken}`,
-        );
-      },
-    );
+    res.cookie("refresh_token", refreshToken.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      expires: refreshToken.expiresAt,
+      path: "/api/auth",
+    });
+    res.status(status.TEMPORARY_REDIRECT).redirect("/oauth-success");
   }),
 ];
