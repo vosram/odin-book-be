@@ -30,12 +30,6 @@ import cookieParser from "cookie-parser";
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3000");
 
-app.use(
-  cors({
-    origin: process.env.FE_URL!,
-    optionsSuccessStatus: 200,
-  }),
-);
 app.use(express.json());
 app.use(cookieParser());
 app.use(morgan("dev"));
